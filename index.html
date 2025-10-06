@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách học sinh</title>
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-image: url('TH 2 gia phu.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .classroom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 1200px;
+            background: #77b5ee;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .blackboard {
+            width: 100%;
+            background-color: #2f17e0;
+            text-align: center;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .blackboard img {
+            max-width: 100%;
+            height: auto;
+        }    
+
+        #congratulation-message {
+            text-align: center;
+            font-size: 24px;
+            color: black;
+            font-weight: normal;
+            margin: 10px 0 20px 0;
+            min-height: 36px;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        #congratulation-message .student-name {
+            color: red;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        #congratulation-message.show {
+            opacity: 1;
+        }
+
+        .classroom {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .desk {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffe4b5;
+            border: 2px solid #d2b48c;
+            border-radius: 5px;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .student {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.3s ease;
+            width: 45%;
+        }
+
+        .student-name-container {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student.male {
+            background-color: #b3d9ff;
+        }
+
+        .student.female {
+            background-color: #ffb3d9;
+        }
+
+        .emoji {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .highlight {
+            background-color: yellow !important;
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
+
+        #start-button {
+            padding: 10px 30px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #start-button:hover {
+            background-color: #45a049;
+        }
+
+        #start-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            z-index: -1;
+        }
+
+        #start-button:active {
+            transform: scale(0.95);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="classroom-container">
+        <div class="blackboard">
+            <img src="tieu de game.png" alt="Welcome to the Classroom">
+        </div>
+        <div id="congratulation-message"></div>
+        <div class="classroom" id="classroom"></div>
+        <button id="start-button">Bắt đầu</button>
+    </div>
+
+    <audio id="waiting-sound" loop>
+        <source src="waiting-sound.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="finish-sound">
+        <source src="finish-sound.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        const students = [
+    'Nguyễn Minh Tùng', 'Trần Thị Lan', 'Lê Văn Hoàng', 'Phạm Thị Mai', 'Hoàng Thanh Tùng', 
+    'Đỗ Ngọc Bích', 'Ngô Quang Huy', 'Vũ Thu Trang', 'Bùi Mạnh Cường', 'Phan Tường Vy',
+    'Nguyễn Thị Nhung', 'Trần Quốc Toàn', 'Lê Hồng Hạnh', 'Phạm Hải Yến', 'Hoàng Bảo Ngọc', 
+    'Đỗ Minh Tuấn', 'Ngô Lan Hương', 'Vũ Quỳnh Anh', 'Bùi Khánh Linh', 'Phan Thiên Ân',
+    'Nguyễn Xuân Hùng', 'Trần Minh Nhựt', 'Lê Thị Mỹ Hạnh', 'Phạm Quỳnh Trang', 'Hoàng Hải Đăng', 
+    'Đỗ Đức Nam', 'Ngô Thị Lan Anh', 'Vũ Quang Hùng', 'Bùi Phúc Hậu', 'Phan Tiểu My',
+    'Nguyễn Thị Bích Ngọc', 'Trần Văn Đức', 'Lê Thái Bình', 'Phạm Tiến Dũng', 'Hoàng Mạnh Cường', 
+    'Đỗ Thanh Lâm', 'Ngô Bích Trâm', 'Vũ Minh Phát', 'Bùi Lan Chi', 'Phan Hoài Thu',
+    'Nguyễn Thị Thảo', 'Trần Đức Trung', 'Lê Quốc Tiến', 'Phạm Mai Lan', 'Hoàng Anh Tuấn'
+];
+
+const genderIndicators = {
+    male: [
+        'văn', 'quốc', 'đức', 'minh', 'quang', 'mạnh', 'thanh', 'xuân', 'hải',
+        'tiến', 'thái', 'phúc', 'hoàng', 'đăng', 'nam', 'phát', 'hùng', 'dũng',
+        'tùng', 'toàn', 'cường', 'tuấn', 'ân', 'nhựt'
+    ],
+    female: [
+        'thị', 'ngọc', 'thu', 'hồng', 'lan', 'quỳnh', 'bích', 'mai', 'hạnh',
+        'trang', 'vy', 'nhung', 'yến', 'hương', 'anh', 'linh', 'my', 'trâm',
+        'chi'
+    ]
+};
+
+let selectedStudent = null;
+let isSelecting = false;
+const waitingSound = document.getElementById('waiting-sound');
+const finishSound = document.getElementById('finish-sound');
+const startButton = document.getElementById('start-button');
+
+// Khởi tạo âm thanh
+waitingSound.volume = 0.5;
+finishSound.volume = 0.7;
+waitingSound.loop = true;  // Đảm bảo âm thanh sẽ lặp lại
+
+function detectGender(name) {
+    name = name.toLowerCase();
+    for (let female of genderIndicators.female) {
+        if (name.includes(female)) {
+            return 'female';
+        }
+    }
+    for (let male of genderIndicators.male) {
+        if (name.includes(male)) {
+            return 'male';
+        }
+    }
+    return 'male';
+}
+
+function createClassroom() {
+    const classroom = document.getElementById('classroom');
+    classroom.innerHTML = '';
+
+    for (let i = 0; i < students.length; i += 2) {
+        const desk = document.createElement('div');
+        desk.className = 'desk';
+
+        const student1 = document.createElement('div');
+        const gender1 = detectGender(students[i]);
+        student1.className = `student ${gender1}`;
+        student1.innerHTML = `
+            <div class='emoji'>🙍‍${gender1 === 'male' ? '♂️' : '♀️'}</div>
+            <div class='student-name-container'>${students[i]}</div>
+        `;
+        desk.appendChild(student1);
+
+        if (students[i + 1]) {
+            const student2 = document.createElement('div');
+            const gender2 = detectGender(students[i + 1]);
+            student2.className = `student ${gender2}`;
+            student2.innerHTML = `
+                <div class='emoji'>🙍‍${gender2 === 'male' ? '♂️' : '♀️'}</div>
+                <div class='student-name-container'>${students[i + 1]}</div>
+            `;
+            desk.appendChild(student2);
+        }
+
+        classroom.appendChild(desk);
+    }
+}
+
+function randomHighlight() {
+    const students = document.querySelectorAll('.student');
+    students.forEach(student => student.classList.remove('highlight'));
+    const randomIndex = Math.floor(Math.random() * students.length);
+    students[randomIndex].classList.add('highlight');
+    return students[randomIndex];
+}
+
+function resetPreviousSelection() {
+    if (selectedStudent) {
+        selectedStudent.style.color = '';
+        selectedStudent.style.fontSize = '';
+        selectedStudent.classList.remove('highlight');
+    }
+    const message = document.getElementById('congratulation-message');
+    message.classList.remove('show');
+}
+
+function showCongratulations() {
+    const message = document.getElementById('congratulation-message');
+    const studentName = selectedStudent.querySelector('.student-name-container').textContent.trim();
+    message.innerHTML = `Chúc mừng bạn <span class="student-name">${studentName}</span> là người may mắn được chọn!`;
+    message.classList.add('show');
+}
+
+function startConfetti() {
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }, i * 500);
+    }
+}
+
+startButton.addEventListener('click', () => {
+    if (isSelecting) return;
+    
+    isSelecting = true;
+    resetPreviousSelection();
+    startButton.disabled = true;
+
+    // Phát âm thanh chờ và lặp lại
+    waitingSound.currentTime = 0;  // Reset thời gian phát về 0
+    try {
+        waitingSound.play().catch(error => {
+            console.error('Error playing waiting sound:', error);
+        });
+    } catch (error) {
+        console.error('Error playing waiting sound:', error);
+    }
+
+    const interval = setInterval(() => {
+        selectedStudent = randomHighlight();
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(interval);
+        isSelecting = false;
+        selectedStudent.style.fontSize = '16px';
+        selectedStudent.style.color = 'red';
+        
+        // Dừng âm thanh chờ
+        waitingSound.pause();
+        waitingSound.currentTime = 0;
+        
+        // Phát âm thanh kết thúc
+        try {
+            finishSound.currentTime = 0;
+            finishSound.play().catch(error => {
+                console.error('Error playing finish sound:', error);
+            });
+        } catch (error) {
+            console.error('Error playing finish sound:', error);
+        }
+        
+        startConfetti();
+        showCongratulations();
+        startButton.disabled = false;
+    }, 5000);
+});
+
+// Khởi tạo lớp học khi trang được tải
+createClassroom();
+
+// Xử lý lỗi âm thanh
+waitingSound.onerror = () => console.error('Error loading waiting sound');
+finishSound.onerror = () => console.error('Error loading finish sound');
+
+// Preload âm thanh khi người dùng tương tác với trang
+document.addEventListener('click', () => {
+    const waitingSound = document.getElementById('waiting-sound');
+    waitingSound.play().catch(error => console.error('Error playing sound:', error));
+});
+
+    </script>
+</body>
+</html>
